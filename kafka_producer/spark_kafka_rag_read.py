@@ -12,7 +12,6 @@ def get_embedding_api(text):
     Calls the Ollama embedding API to generate an embedding vector.
 
     Ollama expects the key "input" for the text.
-    Checks for either "embedding" or "embeddings" in the response.
     Falls back to a 1024-dimensional zero vector if nothing valid is returned.
     """
     url = "http://host.docker.internal:11434/api/embed"
@@ -43,25 +42,20 @@ def search_products(query_text, limit=5):
 
     Returns the search results from Qdrant.
     """
-    # Connect to Qdrant.
     client = QdrantClient(host="host.docker.internal", port=6333)
 
-    # Get the embedding vector for the query.
     query_vector = get_embedding_api(query_text)
     if not query_vector:
         raise ValueError("No valid embedding returned; cannot perform search.")
 
-    # If the embedding is returned as a nested list, flatten it:
     if isinstance(query_vector, list) and query_vector and isinstance(query_vector[0], list):
         query_vector = query_vector[0]
 
-    # Build a SearchRequest with a flat list of floats.
     search_request = SearchRequest(
         vector=query_vector,
         limit=limit
     )
 
-    # Call query_points using the SearchRequest object.
     search_result = client.query_points(
         collection_name="products_collection",
         query=search_request
@@ -71,7 +65,6 @@ def search_products(query_text, limit=5):
 
 
 def main():
-    # Set up command-line arguments.
     parser = argparse.ArgumentParser(
         description="Verify vectors in Qdrant by performing a search query using Ollama embeddings."
     )
@@ -90,7 +83,6 @@ def main():
         print(f"\nSearch results for query: '{args.query}'")
         print("-" * 50)
         for hit in results:
-            # Each hit should have a 'score' and a 'payload' containing product info.
             score = hit.score if hasattr(hit, 'score') else "N/A"
             payload = hit.payload if hasattr(hit, 'payload') else {}
             product_name = payload.get('product_name', 'N/A')

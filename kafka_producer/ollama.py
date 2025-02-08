@@ -13,7 +13,7 @@ def get_embedding_api(text):
     Checks for either "embedding" or "embeddings" in the response.
     Falls back to a 1024-dimensional zero vector if nothing valid is returned.
     """
-    url = "http://localhost:11434/api/embed" 
+    url = "http://localhost:11434/api/embed"
     payload = {
         "model": "mxbai-embed-large",
         "input": text
