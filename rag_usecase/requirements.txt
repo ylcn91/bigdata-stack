@@ -1,0 +1,4 @@
+requests>=2.28.1
+mlflow>=2.0.0
+qdrant-client>=0.10.0
+numpy>=1.22.0

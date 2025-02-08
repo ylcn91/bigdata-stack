@@ -1,0 +1,206 @@
+version: '3.8'
+services:
+  # ---------------------
+  # ZOOKEEPER & KAFKA
+  # ---------------------
+  zookeeper:
+    build: 
+      context: ./zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  
+  kafka:
+    build:
+      context: ./kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+    depends_on:
+      - zookeeper
+  
+  # ---------------------
+  # HADOOP (Single Node)
+  # ---------------------
+  hadoop:
+    platform: linux/amd64
+    build:
+      context: ./hadoop
+    container_name: hadoop
+    hostname: hadoop
+    ports:
+      - "9870:9870"    # Namenode Web UI
+      - "9864:9864"    # Datanode Web UI
+      - "8088:8088"   # YARN ResourceManager Web UI
+      - "8042:8042"   # NodeManager Web UI
+      - "19888:19888" # MapReduce JobHistory
+    environment:
+      - CLUSTER_NAME=local-hadoop
+
+  # ---------------------
+  # SPARK
+  # ---------------------
+  spark:
+    build:
+      context: ./spark
+    container_name: spark
+    ports:
+      - "7077:7077"    # Spark Master
+      - "8080:8080"    # Spark Web UI
+    depends_on:
+      - hadoop
+
+  # ---------------------
+  # HIVE
+  # ---------------------
+  hive:
+      build:
+        context: ./hive
+      container_name: hive
+      environment:
+        - HIVE_CORE_CONF_javax_jdo_option_ConnectionURL=jdbc:postgresql://localhost:5432/metastore
+        - HIVE_CORE_CONF_javax_jdo_option_ConnectionDriverName=org.postgresql.Driver
+        - HIVE_CORE_CONF_javax_jdo_option_ConnectionUserName=yalcindoksanbir
+        - HIVE_CORE_CONF_javax_jdo_option_ConnectionPassword=6161
+        - HIVE_CORE_CONF_hive_metastore_uris=thrift://localhost:9083
+        - CORE_CONF_fs_defaultFS=hdfs://hadoop:9000
+      ports:
+        - "10000:10000"
+        - "10002:10002"
+        - "9083:9083"
+      depends_on:
+        - hadoop
+
+  # ---------------------
+  # CASSANDRA
+  # ---------------------
+  cassandra:
+    build:
+      context: ./cassandra
+    container_name: cassandra
+    ports:
+      - "9042:9042"
+
+  # ---------------------
+  # MONGODB
+  # ---------------------
+  mongodb:
+    build:
+      context: ./mongodb
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+
+  # ---------------------
+  # MINIO
+  # ---------------------
+  minio:
+    build:
+      context: ./minio
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
+  # ---------------------
+  # AIRFLOW
+  # ---------------------
+  airflow:
+    build:
+      context: ./airflow
+    container_name: airflow
+    command: >
+       airflow standalone
+    ports:
+      - "8081:8080"  # Airflow Web UI
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__API__AUTH_BACKEND=airflow.api.auth.backend.basic_auth
+    depends_on:
+      - spark
+
+  # ---------------------
+  # PROMETHEUS
+  # ---------------------
+  prometheus:
+    build:
+      context: ./prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  # ---------------------
+  # GRAFANA
+  # ---------------------
+  grafana:
+    build:
+      context: ./grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.3
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+  
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.5.3
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - xpack.security.enabled=false
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  # ---------------------
+  # MLFLOW
+  # ---------------------
+  mlflow:
+    build:
+      context: ./mlflow
+    container_name: mlflow
+    ports:
+      - "5001:5000" 
+    environment:
+      - MLFLOW_TRACKING_URI=sqlite:///mlflow.db
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - MLFLOW_ARTIFACT_ROOT=s3://mlflow-artifacts
+    command: >
+      mlflow server --backend-store-uri sqlite:///mlflow.db
+             --default-artifact-root s3://mlflow-artifacts
+             --host 0.0.0.0
+             --port 5000
+    volumes:
+      - ./mlflow-artifacts:/mlflow-artifacts
+    depends_on:
+      - minio
+
+volumes:
+  minio-data:
