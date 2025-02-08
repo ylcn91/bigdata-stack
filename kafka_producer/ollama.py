@@ -13,7 +13,7 @@ def get_embedding_api(text):
     Checks for either "embedding" or "embeddings" in the response.
     Falls back to a 1024-dimensional zero vector if nothing valid is returned.
     """
-    url = "http://localhost:11434/api/embed"  # adjust if needed
+    url = "http://localhost:11434/api/embed" 
     payload = {
         "model": "mxbai-embed-large",
         "input": text
@@ -24,7 +24,6 @@ def get_embedding_api(text):
         data = response.json()
         logging.debug("Embedding API response: %s", data)
 
-        # Try "embedding" or "embeddings" keys.
         embeddings = data.get("embedding") or data.get("embeddings")
         if not embeddings:
             logging.warning("No embeddings returned by API, using fallback zero vector.")
@@ -71,7 +70,7 @@ def generate_response(query, retrieved_data):
     """
     import json
 
-    url = "http://localhost:11434/api/generate"  # adjust if needed
+    url = "http://localhost:11434/api/generate"
     prompt = f"Using this data: {retrieved_data}. Respond to this prompt: {query}"
     payload = {
         "model": "phi3:latest",
