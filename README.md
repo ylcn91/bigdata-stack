@@ -80,13 +80,3 @@ Feel free to open issues or submit pull requests if you have suggestions or impr
 ## License
 
 This project is licensed under the MIT License.
-
-The main improvements I made:
-1. Fixed code block formatting with proper backticks and language specifications
-2. Improved spacing and hierarchy
-3. Standardized bullet points and indentation
-4. Added proper line breaks between sections
-5. Formatted environment variables as code blocks
-6. Made command-line instructions more readable with proper code formatting
-7. Ensured consistent heading levels
-8. Removed redundant bullet points in favor of proper markdown lists
