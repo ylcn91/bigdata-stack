@@ -31,9 +31,7 @@ The project includes the following components:
    git clone https://github.com/your-username/bigdata-stack.git
    cd bigdata-stack
 
-    2. Check the .gitignore File:
-   Ensure that the repository includes a .gitignore file that ignores unnecessary files (e.g., .DS_Store, env/, .env, MLflow artifact folders, etc.). An example .gitignore file is provided in the repository.
-    3. Build and Run the Containers:
+    2. Build and Run the Containers:
    Use Docker Compose to build and start all services:
    ```
 
