@@ -2,15 +2,11 @@ import requests
 import mlflow
 import logging
 import json
-import os
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import VectorParams, Distance
 
-# Configure logging to output INFO-level messages with timestamps.
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-
-# --- Ollama API Functions ---
 
 def get_embedding(text: str, model: str = "mxbai-embed-large") -> list:
     """
@@ -23,10 +19,8 @@ def get_embedding(text: str, model: str = "mxbai-embed-large") -> list:
     response = requests.post(url, json=payload)
     if response.status_code == 200:
         data = response.json()
-        # The API may return the embedding under "embedding" or "embeddings".
         embedding = data.get("embedding") or data.get("embeddings")
         if isinstance(embedding, list):
-            # If it's a nested list, extract the inner list.
             if embedding and isinstance(embedding[0], list):
                 embedding = embedding[0]
             logging.info("Embedding generated with dimension: %d", len(embedding))
@@ -68,7 +62,6 @@ def generate_response(prompt: str, model: str = "phi3:latest") -> str:
     return full_response
 
 
-# --- Qdrant Operations ---
 
 def setup_qdrant_collection(client: QdrantClient, collection_name: str, vector_size: int):
     """
@@ -113,17 +106,13 @@ def search_qdrant(client: QdrantClient, collection_name: str, query_vector: list
     return results
 
 
-# --- Main Workflow ---
-
 def main():
     logging.info("Starting RAG Use Case Script")
 
-    # Set up MLflow tracking
     mlflow.set_tracking_uri("http://localhost:5001")
     mlflow.set_experiment("RAG_UseCase_Example")
     logging.info("MLflow experiment set to 'RAG_UseCase_Example'.")
 
-    # Sample documents (facts about llamas)
     documents = [
         "Llamas are members of the camelid family meaning they're pretty closely related to vicuñas and camels.",
         "Llamas were first domesticated and used as pack animals 4,000 to 5,000 years ago in the Peruvian highlands.",
@@ -133,28 +122,22 @@ def main():
         "Llamas live to be about 20 years old, though some only live for 15 years and others live to be 30 years old.",
     ]
 
-    # Connect to Qdrant (ensure your Qdrant container is running on localhost:6333)
     logging.info("Connecting to Qdrant at localhost:6333")
     qdrant_client = QdrantClient(host="localhost", port=6333)
     collection_name = "llama_docs"
 
-    # Determine the embedding vector size using a sample text
     sample_text = "Sample text to determine embedding dimension."
     sample_embedding = get_embedding(sample_text)
     vector_size = len(sample_embedding)
     logging.info("Determined embedding vector size: %d", vector_size)
 
-    # Set up the Qdrant collection with the correct vector dimension
     setup_qdrant_collection(qdrant_client, collection_name, vector_size)
 
-    # Add documents to Qdrant
     add_documents_to_qdrant(qdrant_client, collection_name, documents)
 
-    # Process a user query
     query_text = "What animals are llamas related to?"
     query_embedding = get_embedding(query_text)
 
-    # Search Qdrant for the nearest document
     search_results = search_qdrant(qdrant_client, collection_name, query_embedding, limit=1)
     if search_results and len(search_results) > 0:
         retrieved_doc = search_results[0].payload.get("text", "")
@@ -165,18 +148,13 @@ def main():
         similarity_score = None
         logging.warning("No search results found.")
 
-    # Build the generation prompt
     generation_prompt = f"Using this data: {retrieved_doc}. Respond to this prompt: {query_text}"
     logging.info("Generation prompt: %s", generation_prompt)
 
-    # Generate the final response using the generation endpoint
     final_response = generate_response(generation_prompt, model="phi3:latest")
 
-    # Truncate the final response to 500 characters (the MLflow parameter limit)
     truncated_final_response = final_response[:500]
-    
-    # Log the experiment details in MLflow.
-    # Also, log the full response as an artifact.
+
     with mlflow.start_run():
         mlflow.log_param("embedding_model", "mxbai-embed-large")
         mlflow.log_param("generation_model", "phi3:latest")
@@ -192,7 +170,6 @@ def main():
         mlflow.log_artifact(artifact_path)
         logging.info("Experiment logged in MLflow.")
 
-    # Print final outputs
     print("Query:", query_text)
     print("Retrieved Document:", retrieved_doc)
     print("Generation Prompt:", generation_prompt)
