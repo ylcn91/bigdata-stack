@@ -33,7 +33,7 @@ The project includes the following components:
 
 2. **Build and Run the Containers:**
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
    This command will start all the components, including Kafka, Hadoop, Hive, Spark, MinIO, MLflow, and other services.
 
