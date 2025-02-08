@@ -1,11 +1,9 @@
-#!/usr/bin/env python3
 import logging
 import requests
 import argparse
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import SearchRequest
 
-# Configure logging to display debug-level messages.
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(message)s")
 
 

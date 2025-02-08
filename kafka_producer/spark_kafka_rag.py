@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import json
 import requests
 import logging
@@ -9,14 +8,12 @@ from pyspark.sql.types import StructType, StringType, ArrayType, DoubleType
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(message)s")
 
-# Schema definition
 schema = StructType() \
     .add("product_id", StringType()) \
     .add("product_name", StringType()) \
     .add("description", StringType()) \
     .add("timestamp", StringType())
 
-# Embedding function
 def get_embedding_api(text):
     try:
         url = "http://host.docker.internal:11434/api/embed"
@@ -35,10 +32,8 @@ def get_embedding_api(text):
         logging.error(f"Error generating embedding: {e}")
         return [0.0] * 1024
 
-# Create UDF
 embedding_udf = udf(get_embedding_api, ArrayType(DoubleType()))
 
-# Qdrant write function
 def write_to_qdrant(batch_df, batch_id):
     from qdrant_client import QdrantClient
     from qdrant_client.http.models import VectorParams, Distance
