@@ -1,4 +1,10 @@
 version: '3.8'
+
+networks:
+  default:
+    name: bigdata-stack_default
+    driver: bridge
+
 services:
   # ---------------------
   # ZOOKEEPER & KAFKA
@@ -11,6 +17,8 @@ services:
       - "2181:2181"
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - default
   
   kafka:
     build:
@@ -18,13 +26,21 @@ services:
     container_name: kafka
     ports:
       - "9092:9092"
+      - "29092:29092"
     environment:
       - KAFKA_BROKER_ID=1
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS=60000
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+    networks:
+      - default    
     depends_on:
       - zookeeper
+
   
   # ---------------------
   # HADOOP (Single Node)
@@ -54,6 +70,9 @@ services:
     ports:
       - "7077:7077"    # Spark Master
       - "8080:8080"    # Spark Web UI
+      - "4040:4040"    # Driver UI port
+    networks:
+      - default
     depends_on:
       - hadoop
 
