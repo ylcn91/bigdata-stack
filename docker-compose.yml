@@ -6,6 +6,33 @@ networks:
     driver: bridge
 
 services:
+
+  # ---------------------
+  # OLLAMA
+  # ---------------------
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    
+  # ---------------------
+  # QDRANT
+  # ---------------------
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - '6333:6333'
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: 6334
+      QDRANT__SERVICE__HTTP_PORT: 6333
+    networks:
+      - default
   # ---------------------
   # ZOOKEEPER & KAFKA
   # ---------------------
@@ -223,3 +250,5 @@ services:
 
 volumes:
   minio-data:
+  qdrant_data:
+  ollama:
