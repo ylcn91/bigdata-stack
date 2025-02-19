@@ -26,23 +26,61 @@ The project includes the following components:
 ## Setup and Running the Project
 
 1. **Clone the Repository:**
+
    ```bash
    git clone https://github.com/your-username/bigdata-stack.git
    cd bigdata-stack
    ```
 
 2. **Build and Run the Containers:**
+
    ```bash
    docker compose up --build
    ```
+
    This command will start all the components, including Kafka, Hadoop, Hive, Spark, MinIO, MLflow, and other services.
 
 3. **Verify the Setup:**
+
    - MLflow UI: Open http://localhost:5001 in your browser to view MLflow experiments
    - MinIO Console: Access MinIO at http://localhost:9001 (default credentials: minioadmin / minioadmin) to view your S3-compatible buckets
    - Other Services: Verify that other services (e.g., Airflow, Prometheus, Grafana, Kibana) are running on their respective ports
 
-4. **Running the RAG Usecase:**
+4. **Load Ollama Models**
+
+   - This example uses `mxbai-embed-large` to generate embeddings. You can load the model by accessing the Docker container for ollama and running the following commands:
+     - Access the ollama container:
+       ```bash
+       docker exec -it ollama bash
+       ```
+       Alternatively, you can also exec via the Docker Desktop interface.
+     - Load the embedding model:
+       ```bash
+       ollama pull mxbai-embed-large
+       ```
+     - Load the text generation model:
+       ```bash
+       ollama pull phi3:latest
+       ```
+
+5. **Export Credentials locally**
+
+   - If you're running the script directly on your host machine, export these credentials in your terminal:
+     - sh:
+       ```bash
+       export AWS_ACCESS_KEY_ID=minioadmin
+       export AWS_SECRET_ACCESS_KEY=minioadmin
+       export MLFLOW_S3_ENDPOINT_URL=http://localhost:9000
+       ```
+     - powershell:
+       ```bash
+       $env:AWS_ACCESS_KEY_ID="minioadmin"
+       $env:AWS_SECRET_ACCESS_KEY="minioadmin"
+       $env:MLFLOW_S3_ENDPOINT_URL="http://localhost:9000"
+       ```
+
+6. **Running the RAG Usecase:**
+
    ```bash
    cd rag_usecase
    pip install -r requirements.txt
@@ -50,6 +88,7 @@ The project includes the following components:
    ```
 
    The script will:
+
    - Generate embeddings for sample text and documents
    - Set up a Qdrant collection
    - Retrieve the most relevant document for a given query

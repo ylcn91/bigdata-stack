@@ -17,6 +17,10 @@ services:
       - "11434:11434"
     volumes:
       - ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          memory: 10G      
     
   # ---------------------
   # QDRANT
