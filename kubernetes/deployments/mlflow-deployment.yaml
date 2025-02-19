@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml
+    kompose.version: 1.35.0 (HEAD)
+  labels:
+    io.kompose.service: mlflow
+  name: mlflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: mlflow
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml
+        kompose.version: 1.35.0 (HEAD)
+      labels:
+        io.kompose.service: mlflow
+    spec:
+      containers:
+        - args:
+            - mlflow
+            - server
+            - --backend-store-uri
+            - sqlite:///mlflow.db
+            - --default-artifact-root
+            - s3://mlflow-artifacts
+            - --host
+            - 0.0.0.0
+            - --port
+            - "5000"
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: minioadmin
+            - name: AWS_SECRET_ACCESS_KEY
+              value: minioadmin
+            - name: MLFLOW_ARTIFACT_ROOT
+              value: s3://mlflow-artifacts
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: http://minio:9000
+            - name: MLFLOW_TRACKING_URI
+              value: sqlite:///mlflow.db
+          image: mlflow
+          name: mlflow
+          ports:
+            - containerPort: 5000
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /mlflow-artifacts
+              name: mlflow-claim0
+      restartPolicy: Always
+      volumes:
+        - name: mlflow-claim0
+          persistentVolumeClaim:
+            claimName: mlflow-claim0
